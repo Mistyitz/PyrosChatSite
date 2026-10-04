@@ -3,5 +3,5 @@
 <p>So the main struggle was working out the rooms and peer js but the log in and users were easy eventually I used ai to fix my broken peer js but then I modified the code to fit our liking and style then boom were up!</p>
 
 <p>Launcher
-<a> href="https://cdn.jsdelivr.net/gh/Mistyitz/PyrosChatSite@main/new.svg"</a>
+Link is https://cdn.jsdelivr.net/gh/Mistyitz/PyrosChatSite@main/L.svg
 </p>
