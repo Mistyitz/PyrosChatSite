@@ -1,0 +1,284 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap');
+
+      text { user-select: none; }
+      
+      .bg-main { fill: #07080a; }
+      .glass-card { fill: #12141a; fill-opacity: 0.95; stroke: #242832; stroke-width: 1; }
+      .sidebar-bg { fill: #0b0c10; fill-opacity: 0.85; stroke: #1a1d24; stroke-width: 1; }
+      .header-bg { fill: #07080a; fill-opacity: 0.9; stroke: #1a1d24; stroke-width: 1; }
+      .input-bg { fill: #07080a; stroke: #242832; stroke-width: 1.5; }
+      
+      .text-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; fill: #fb923c; }
+      .text-sub { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 11px; fill: #94a3b8; }
+      .text-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #64748b; }
+      .text-body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; fill: #e2e8f0; }
+      .text-bold { font-weight: 700; }
+      .text-admin { fill: #f87171; font-weight: 700; }
+      
+      .badge-admin { fill: #7f1d1d; fill-opacity: 0.9; stroke: #991b1b; }
+      .badge-public { fill: #064e3b; fill-opacity: 0.8; stroke: #065f46; }
+      .badge-text-public { fill: #34d399; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
+      .badge-text-admin { fill: #fca5a5; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; font-weight: 700; }
+      
+      .btn-orange { fill: url(#orange-grad); }
+      .btn-ping { fill: #451a03; fill-opacity: 0.8; stroke: #b45309; stroke-width: 1; }
+      .btn-dark { fill: #07080a; stroke: #1a1d24; stroke-width: 1; }
+      
+      .ember { fill: #f97316; opacity: 0.5; }
+      .ember-red { fill: #ef4444; opacity: 0.4; }
+    </style>
+
+    <linearGradient id="orange-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <linearGradient id="flame-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c2d12" />
+      <stop offset="50%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+
+    <linearGradient id="avatar-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#dc2626" />
+    </linearGradient>
+
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Fullscreen Background -->
+  <rect width="1200" height="800" class="bg-main" />
+
+  <!-- Background Embers / Flame Particles -->
+  <circle cx="100" cy="720" r="2.5" class="ember" />
+  <circle cx="220" cy="640" r="3" class="ember-red" />
+  <circle cx="380" cy="760" r="1.5" class="ember" />
+  <circle cx="650" cy="700" r="2.5" class="ember" />
+  <circle cx="920" cy="620" r="2" class="ember-red" />
+  <circle cx="1120" cy="750" r="3" class="ember" />
+  <circle cx="300" cy="380" r="1.5" class="ember-red" />
+  <circle cx="880" cy="320" r="2" class="ember" />
+
+  <!-- MAIN APP CONTAINER (Full Bounds) -->
+  <g>
+    <!-- Outer Fullscreen Layout Frame -->
+    <rect width="1200" height="800" class="glass-card" />
+
+    <!-- SIDEBAR -->
+    <g>
+      <!-- Sidebar Panel -->
+      <rect x="0" y="0" width="300" height="800" class="sidebar-bg" />
+
+      <!-- Brand Header -->
+      <g transform="translate(16, 16)">
+        <rect width="268" height="64" rx="16" class="header-bg" />
+        
+        <!-- Flame Logo Icon -->
+        <rect x="12" y="12" width="40" height="40" rx="12" fill="url(#flame-grad)" filter="url(#glow)" />
+        <path d="M 32 22 C 32 22 38 28 38 33 C 38 36.3 35.3 39 32 39 C 28.7 39 26 36.3 26 33 C 26 30 29 25 32 22 Z" fill="#ffffff" />
+        <path d="M 32 28 C 32 28 35 31 35 34 C 35 35.7 33.7 37 32 37 C 30.3 37 29 35.7 29 34 C 29 32 31 29.5 32 28 Z" fill="#f97316" />
+
+        <!-- Title & Status -->
+        <text x="64" y="34" class="text-title">Pyro's Chatting</text>
+        <circle cx="68" cy="47" r="3.5" fill="#10b981" />
+        <text x="78" y="50" class="text-mono">P2P Mesh Active</text>
+      </g>
+
+      <!-- Rooms Directory Section -->
+      <g transform="translate(16, 100)">
+        <text x="8" y="15" class="text-mono" font-weight="700">ROOMS DIRECTORY</text>
+
+        <!-- Refresh Button Icon -->
+        <g transform="translate(244, 4)">
+          <path d="M 8 2 A 6 6 0 1 1 2 8" stroke="#64748b" stroke-width="1.8" fill="none" stroke-linecap="round" />
+          <path d="M 8 0 L 10 3 L 7 5" fill="#64748b" />
+        </g>
+
+        <!-- Room Items -->
+        <!-- Main Room (Active) -->
+        <g transform="translate(0, 28)">
+          <rect width="268" height="42" rx="12" fill="#ea580c" fill-opacity="0.2" stroke="#f97316" stroke-opacity="0.6" stroke-width="1.5" />
+          <text x="16" y="26" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="14" fill="#ea580c">#</text>
+          <text x="32" y="26" class="text-body text-bold" font-size="14">main</text>
+          <rect x="198" y="11" width="58" height="20" rx="6" class="badge-public" />
+          <text x="210" y="25" class="badge-text-public">Public</text>
+        </g>
+
+        <!-- Dev Talk Room -->
+        <g transform="translate(0, 78)">
+          <rect width="268" height="42" rx="12" fill="#07080a" fill-opacity="0.6" stroke="#1a1d24" />
+          <text x="16" y="26" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="14" fill="#f97316">#</text>
+          <text x="32" y="26" class="text-body" fill="#94a3b8" font-size="14">dev-talk</text>
+          <rect x="198" y="11" width="58" height="20" rx="6" class="badge-public" />
+          <text x="210" y="25" class="badge-text-public">Public</text>
+        </g>
+
+        <!-- Gaming Room -->
+        <g transform="translate(0, 128)">
+          <rect width="268" height="42" rx="12" fill="#07080a" fill-opacity="0.6" stroke="#1a1d24" />
+          <text x="16" y="26" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="14" fill="#f97316">#</text>
+          <text x="32" y="26" class="text-body" fill="#94a3b8" font-size="14">gaming</text>
+          <rect x="198" y="11" width="58" height="20" rx="6" class="badge-public" />
+          <text x="210" y="25" class="badge-text-public">Public</text>
+        </g>
+      </g>
+
+      <!-- Bottom User Profile Deck -->
+      <g transform="translate(16, 672)">
+        <rect width="268" height="112" rx="16" fill="#0b0c10" fill-opacity="0.9" stroke="#1a1d24" />
+        
+        <!-- User Info Card -->
+        <g transform="translate(10, 10)">
+          <rect width="248" height="48" rx="12" class="btn-dark" />
+          
+          <!-- Avatar -->
+          <rect x="8" y="8" width="32" height="32" rx="10" fill="url(#avatar-grad)" />
+          <text x="19" y="29" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="14" fill="#ffffff">G</text>
+          
+          <!-- Name & Status -->
+          <text x="48" y="23" class="text-body text-bold" font-size="13">Guest</text>
+          <text x="48" y="37" font-family="'JetBrains Mono'" font-size="10" fill="#34d399">Online</text>
+          
+          <!-- Logout Button -->
+          <g transform="translate(208, 10)">
+            <rect width="28" height="28" rx="8" fill="#12141a" stroke="#242832" />
+            <path d="M 10 14 L 18 14 M 15 10 L 19 14 L 15 18" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </g>
+        </g>
+
+        <!-- Audio Effects Button -->
+        <g transform="translate(10, 66)">
+          <rect width="248" height="36" rx="10" class="btn-dark" />
+          <!-- Speaker Icon -->
+          <path d="M 78 18 L 82 18 L 87 13 L 87 23 L 82 18 L 78 18 Z" fill="#f97316" />
+          <path d="M 90 15 C 92 17 92 19 90 21" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" fill="none" />
+          <text x="98" y="22" font-family="'Plus Jakarta Sans'" font-weight="600" font-size="11" fill="#cbd5e1">Audio Effects</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- MAIN CHAT VIEWPORT -->
+    <g transform="translate(300, 0)">
+      <!-- Header Bar -->
+      <g>
+        <rect x="0" y="0" width="900" height="64" fill="#0b0c10" fill-opacity="0.5" stroke="#1a1d24" stroke-width="1" />
+        <text x="28" y="38" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="18" fill="#f97316">#</text>
+        <text x="44" y="38" class="text-body text-bold" font-size="16">main</text>
+        <text x="98" y="37" fill="#334155" font-size="16">|</text>
+        <text x="114" y="37" class="text-sub" font-size="12">Public Main Room</text>
+
+        <!-- Ping Admins Button -->
+        <g transform="translate(750, 14)">
+          <rect width="126" height="36" rx="12" class="btn-ping" />
+          
+          <!-- Bell Icon -->
+          <g transform="translate(14, 10)">
+            <path d="M 6 3 C 3 3 2 6 2 9 L 2 12 L 0 14 L 12 14 L 10 12 L 10 9 C 10 6 9 3 6 3 Z" fill="#f59e0b" />
+            <circle cx="6" cy="15.5" r="1.5" fill="#f59e0b" />
+          </g>
+
+          <!-- Fully Visible Text -->
+          <text x="34" y="23" font-family="'Plus Jakarta Sans'" font-weight="700" font-size="12" fill="#fbbf24">Ping Admins</text>
+        </g>
+      </g>
+
+      <!-- CHAT FEED -->
+      <g transform="translate(32, 88)">
+        <!-- Message 1 (Admin Message) -->
+        <g transform="translate(0, 0)">
+          <rect x="0" y="0" width="44" height="44" rx="14" fill="url(#flame-grad)" />
+          <text x="15" y="28" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="15" fill="#ffffff">A</text>
+          
+          <text x="58" y="18" class="text-admin" font-size="13">Admin</text>
+          <rect x="108" y="4" width="46" height="18" rx="5" class="badge-admin" />
+          <text x="116" y="17" class="badge-text-admin">Admin</text>
+          <text x="162" y="17" class="text-mono" font-size="11">10:30 AM</text>
+
+          <text x="58" y="39" class="text-body" fill="#f87171" font-weight="600" font-size="14">Welcome to Pyro's Chatting! Keep discussions friendly and clean.</text>
+        </g>
+
+        <!-- Message 2 (Standard User Message) -->
+        <g transform="translate(0, 76)">
+          <rect x="0" y="0" width="44" height="44" rx="14" fill="url(#avatar-grad)" />
+          <text x="16" y="28" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="15" fill="#ffffff">G</text>
+          
+          <text x="58" y="18" class="text-body text-bold" font-size="13">Guest</text>
+          <rect x="104" y="4" width="52" height="18" rx="5" fill="#334155" fill-opacity="0.8" />
+          <text x="111" y="17" font-family="'Plus Jakarta Sans'" font-size="10" font-weight="600" fill="#cbd5e1">Member</text>
+          <text x="164" y="17" class="text-mono" font-size="11">10:31 AM</text>
+
+          <text x="58" y="39" class="text-body" font-size="14">Hey everyone! The P2P mesh connection works great 🚀</text>
+        </g>
+
+        <!-- Message 3 (Code Snippet Block) -->
+        <g transform="translate(0, 152)">
+          <rect x="0" y="0" width="44" height="44" rx="14" fill="url(#avatar-grad)" />
+          <text x="16" y="28" font-family="'Plus Jakarta Sans'" font-weight="800" font-size="15" fill="#ffffff">G</text>
+          
+          <text x="58" y="18" class="text-body text-bold" font-size="13">Guest</text>
+          <rect x="104" y="4" width="52" height="18" rx="5" fill="#334155" fill-opacity="0.8" />
+          <text x="111" y="17" font-family="'Plus Jakarta Sans'" font-size="10" font-weight="600" fill="#cbd5e1">Member</text>
+          <text x="164" y="17" class="text-mono" font-size="11">10:32 AM</text>
+
+          <!-- Code Box -->
+          <g transform="translate(58, 28)">
+            <rect width="480" height="52" rx="10" fill="#060709" stroke="#1a1d24" stroke-width="1.5" />
+            <path d="M 0 0 L 0 52" stroke="#f97316" stroke-width="3.5" />
+            <text x="16" y="22" class="text-mono" fill="#fcd34d" font-size="12">// PeerJS initialization code</text>
+            <text x="16" y="38" class="text-mono" fill="#f59e0b" font-size="12">const peer = new Peer('pyros_user_123');</text>
+          </g>
+        </g>
+      </g>
+
+      <!-- CHAT INPUT AREA (Bottom) -->
+      <g transform="translate(32, 688)">
+        <!-- Input Outer Container -->
+        <rect width="836" height="56" rx="14" class="input-bg" />
+        
+        <!-- Toolbar Icons (Smile + Code) -->
+        <g transform="translate(16, 17)">
+          <!-- Face Smile Icon -->
+          <circle cx="11" cy="11" r="8" stroke="#64748b" stroke-width="1.8" fill="none" />
+          <circle cx="8.5" cy="9" r="1.2" fill="#64748b" />
+          <circle cx="13.5" cy="9" r="1.2" fill="#64748b" />
+          <path d="M 7.5 13.5 Q 11 17 14.5 13.5" stroke="#64748b" stroke-width="1.5" fill="none" stroke-linecap="round" />
+
+          <!-- Code Icon -->
+          <path d="M 34 6 L 28 11 L 34 16 M 40 6 L 46 11 L 40 16" stroke="#64748b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          
+          <!-- Divider -->
+          <line x1="58" y1="0" x2="58" y2="22" stroke="#1a1d24" stroke-width="1.5" />
+        </g>
+
+        <!-- Placeholder Input Text -->
+        <text x="88" y="33" class="text-sub" font-size="14" fill="#475569">Type a message or /help...</text>
+
+        <!-- Send Button -->
+        <g transform="translate(732, 10)">
+          <rect width="92" height="36" rx="10" class="btn-orange" filter="url(#glow)" />
+          
+          <!-- Button Text -->
+          <text x="20" y="23" font-family="'Plus Jakarta Sans'" font-weight="700" font-size="13" fill="#ffffff">Send</text>
+          
+          <!-- Paper Plane Icon -->
+          <g transform="translate(56, 11)">
+            <path d="M 0 0 L 14 7 L 0 14 L 3 7 Z" fill="#ffffff" />
+          </g>
+        </g>
+
+        <!-- Footer Markdown & Key Info -->
+        <g transform="translate(4, 72)">
+          <text x="0" y="0" class="text-mono" font-size="11">Markdown: <tspan fill="#cbd5e1">*bold*</tspan>, <tspan fill="#cbd5e1">_italic_</tspan>, <tspan fill="#cbd5e1">`code`</tspan></text>
+          <text x="732" y="0" class="text-mono" font-size="11">Press Enter to send</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
