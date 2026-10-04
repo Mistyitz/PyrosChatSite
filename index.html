@@ -95,6 +95,28 @@
             background: #060709;
             border-left: 3px solid #f97316;
         }
+
+        /* Freeze Overlay CSS */
+        body.user-frozen {
+            pointer-events: none !important;
+            user-select: none !important;
+            overflow: hidden !important;
+        }
+
+        #freeze-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-darkbg-950 text-slate-200 h-screen w-screen flex flex-col antialiased select-none overflow-hidden">
@@ -313,7 +335,7 @@
     </div>
 
     <script>
-        const EMOJI_LIST = ['🔥','⚡','😎','👍','🚀','🎮','💻','🎉','❤️','😂','🤖','💥'];
+        const EMOJI_LIST = ['🔥','⚡','😎','👍','🚀','🎮','💻','🎉','❤','😂','🤖','💥'];
 
         // Core App State (MAIN room set as default priority)
         const MAIN_ROOM = { id: 'main', name: 'main', isPrivate: false, password: '' };
@@ -328,6 +350,8 @@
             adminRedText: true,
             mutedUsers: {},
             isolatedUsers: new Set(),
+            frozenUsers: new Set(),
+            bannedTerms: [], // Dynamically loaded from GitHub profanity.txt
             messages: [],
             rooms: [MAIN_ROOM],
             currentRoom: MAIN_ROOM,
@@ -344,6 +368,63 @@
             if (!usernameOrEmail) return false;
             const clean = usernameOrEmail.trim().toLowerCase();
             return clean === 'bcarter9@students.wcpss.net' || clean === 'bcarter9';
+        }
+
+        // Fetch banned words from GitHub file
+        async function loadBannedTerms() {
+            const rawUrl = "https://raw.githubusercontent.com/Mistyitz/PyrosChatSite/main/bot%20help/profanity.txt";
+            try {
+                const response = await fetch(rawUrl, { cache: "no-store" });
+                if (response.ok) {
+                    const text = await response.text();
+                    APP_STATE.bannedTerms = text
+                        .split(/[\r\n\s]+/)
+                        .map(term => term.trim().toLowerCase())
+                        .filter(term => term.length > 0);
+                }
+            } catch (err) {
+                console.error("Failed to fetch profanity list:", err);
+            }
+        }
+
+        function containsViolation(text) {
+            if (!text || APP_STATE.bannedTerms.length === 0) return false;
+            const lower = text.toLowerCase();
+            return APP_STATE.bannedTerms.some(term => lower.includes(term));
+        }
+
+        function setFreezeOverlayState(frozen) {
+            // ADMIN IMMUNITY: Admins are never shown the freeze overlay
+            if (APP_STATE.currentUser && APP_STATE.currentUser.isAdmin) {
+                let existingOverlay = document.getElementById('freeze-overlay');
+                if (existingOverlay) existingOverlay.remove();
+                document.body.classList.remove('user-frozen');
+                return;
+            }
+
+            let overlay = document.getElementById('freeze-overlay');
+            if (frozen) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'freeze-overlay';
+                    overlay.innerHTML = `
+                        <div class="glass-panel border border-red-600/80 p-6 rounded-2xl text-center max-w-sm shadow-2xl space-y-3">
+                            <div class="w-12 h-12 mx-auto bg-red-950/80 border border-red-600/60 rounded-xl flex items-center justify-center text-red-400 text-2xl">
+                                ❄️
+                            </div>
+                            <h2 class="text-lg font-extrabold text-red-500">Account Frozen</h2>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Your view and chat permissions have been locked due to a policy violation or administrator action.
+                            </p>
+                        </div>
+                    `;
+                    document.body.appendChild(overlay);
+                }
+                document.body.classList.add('user-frozen');
+            } else {
+                if (overlay) overlay.remove();
+                document.body.classList.remove('user-frozen');
+            }
         }
 
         /* ==========================================================================
@@ -579,9 +660,6 @@
             msgEl.innerText = message;
         }
 
-        /* ==========================================================================
-           STREAMING_CHUNK:Scanning rooms and ensuring main room priority...
-           ========================================================================== */
         async function fetchRoomsFromGitHub() {
             const listContainer = document.getElementById('rooms-list');
             listContainer.innerHTML = `
@@ -626,7 +704,6 @@
                 }
             } catch (err) {}
 
-            // Ensure "main" room is ALWAYS first in the directory
             const mainExists = roomsData.find(r => r.id === 'main');
             if (!mainExists) {
                 roomsData.unshift(MAIN_ROOM);
@@ -642,8 +719,6 @@
             }
 
             APP_STATE.rooms = roomsData;
-            
-            // Auto-select MAIN room as the default room on startup
             switchActiveRoom(roomsData[0]);
             renderRoomsUI();
         }
@@ -652,7 +727,7 @@
             const listContainer = document.getElementById('rooms-list');
             listContainer.innerHTML = '';
 
-            if (APP_STATE.currentUser && APP_STATE.isolatedUsers.has(APP_STATE.currentUser.name)) {
+            if (APP_STATE.currentUser && !APP_STATE.currentUser.isAdmin && APP_STATE.isolatedUsers.has(APP_STATE.currentUser.name)) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold bg-red-950/80 border border-red-600/60 text-red-200 shadow-md cursor-not-allowed';
@@ -770,6 +845,8 @@
         function handleIncomingNetworkData(data) {
             if (!data) return;
 
+            const isCurrentAdmin = APP_STATE.currentUser && APP_STATE.currentUser.isAdmin;
+
             if (data.type === 'CHAT_MESSAGE' && data.message) {
                 const msg = data.message;
                 if (!APP_STATE.messages.some(m => m.id === msg.id)) {
@@ -779,14 +856,29 @@
                     soundFX.playSendSound();
                 }
             } else if (data.type === 'ADMIN_MUTE_COMMAND') {
-                if (APP_STATE.currentUser && APP_STATE.currentUser.name === data.targetUser) {
+                if (!isCurrentAdmin && APP_STATE.currentUser && APP_STATE.currentUser.name === data.targetUser) {
                     APP_STATE.mutedUsers[data.targetUser] = Date.now() + (5 * 60 * 1000);
                     alert("An Admin has muted you for 5 minutes.");
                 }
             } else if (data.type === 'ADMIN_ISOLATE_COMMAND') {
-                if (APP_STATE.currentUser && APP_STATE.currentUser.name === data.targetUser) {
+                if (!isCurrentAdmin && APP_STATE.currentUser && APP_STATE.currentUser.name === data.targetUser) {
                     forceIsolateTargetUser();
                 }
+            } else if (data.type === 'USER_FROZEN_EVENT') {
+                APP_STATE.frozenUsers.add(data.targetEmail.toLowerCase());
+                // Ignore freeze event if logged in as admin
+                if (!isCurrentAdmin && APP_STATE.currentUser && APP_STATE.currentUser.email.toLowerCase() === data.targetEmail.toLowerCase()) {
+                    setFreezeOverlayState(true);
+                }
+            } else if (data.type === 'USER_UNFROZEN_EVENT') {
+                APP_STATE.frozenUsers.delete(data.targetEmail.toLowerCase());
+                if (APP_STATE.currentUser && APP_STATE.currentUser.email.toLowerCase() === data.targetEmail.toLowerCase()) {
+                    setFreezeOverlayState(false);
+                }
+            } else if (data.type === 'CHAT_CLEARED_EVENT') {
+                APP_STATE.messages = APP_STATE.messages.filter(m => m.roomId !== data.roomId);
+                saveMessages();
+                renderMessages();
             }
         }
 
@@ -808,9 +900,6 @@
             return escaped;
         }
 
-        /* ==========================================================================
-           STREAMING_CHUNK:Rendering message feed and user actions...
-           ========================================================================== */
         function renderMessages() {
             const container = document.getElementById('messages-container');
             container.innerHTML = '';
@@ -865,8 +954,7 @@
                         <div class="flex items-center space-x-2">
                             <span class="font-bold text-xs ${msg.userRole === 'Admin' ? 'text-red-400' : 'text-slate-200'}">${msg.userName}</span>
                             <span class="text-[10px] px-1.5 py-0.2 rounded ${roleBadgeClass}">${msg.userRole || 'Member'}</span>
-                            <span class="text-[10px] text-slate-500 font-mono">${msg.timestamp}</span>
-                            ${waffleMenuHtml}
+                            <span class="text-[10px] text-slate-500 font-mono">${msg.timestamp}</span>${waffleMenuHtml}
                         </div>
                         
                         <div class="text-xs ${textStyleClass} mt-1 leading-relaxed break-words">
@@ -912,25 +1000,99 @@
         };
 
         function forceIsolateTargetUser() {
+            if (APP_STATE.currentUser && APP_STATE.currentUser.isAdmin) return; // Admin immunity
             APP_STATE.isolatedUsers.add(APP_STATE.currentUser.name);
             const isolationRoom = { id: 'admin_isolation', name: '🔐 ADMIN ISOLATION', isPrivate: true, password: '' };
             switchActiveRoom(isolationRoom);
             alert("An Admin has placed you in a Private Admin Room.");
         }
 
+        // Handle commands (/freeze, /freze, /unfreeze, /clear chat)
+        function handleAdminCommands(text) {
+            const parts = text.trim().split(' ');
+            const cmd = parts[0].toLowerCase();
+            const targetEmail = parts[1]?.toLowerCase();
+
+            if (cmd === '/freeze' || cmd === '/freze') {
+                if (!targetEmail) return alert("Usage: /freeze {email}");
+                APP_STATE.frozenUsers.add(targetEmail);
+                broadcastNetworkData({ type: 'USER_FROZEN_EVENT', targetEmail: targetEmail });
+                if (APP_STATE.currentUser && !APP_STATE.currentUser.isAdmin && APP_STATE.currentUser.email.toLowerCase() === targetEmail) {
+                    setFreezeOverlayState(true);
+                }
+                alert(`User ${targetEmail} is frozen.`);
+                return true;
+            }
+
+            if (cmd === '/unfreeze') {
+                if (!targetEmail) return alert("Usage: /unfreeze {email}");
+                APP_STATE.frozenUsers.delete(targetEmail);
+                broadcastNetworkData({ type: 'USER_UNFROZEN_EVENT', targetEmail: targetEmail });
+                if (APP_STATE.currentUser && APP_STATE.currentUser.email.toLowerCase() === targetEmail) {
+                    setFreezeOverlayState(false);
+                }
+                alert(`User ${targetEmail} is unfrozen.`);
+                return true;
+            }
+
+            if (text.toLowerCase().startsWith('/clear chat')) {
+                const match = text.match(/^\/clear chat\s+(\d{1,2}:\d{2}|\d{1,2})\s+(am|pm)$/i);
+                if (!match) {
+                    alert("Usage: /clear chat {time} {am/pm} (e.g. /clear chat 1:00 am)");
+                    return true;
+                }
+                const timeStr = `${match[1]}${match[2].toLowerCase()}`;
+                const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'main';
+
+                APP_STATE.messages = APP_STATE.messages.filter(m => m.roomId !== currentRoomId);
+                saveMessages();
+                renderMessages();
+
+                broadcastNetworkData({ type: 'CHAT_CLEARED_EVENT', roomId: currentRoomId, clearTime: timeStr });
+                alert(`Chat cleared up to ${timeStr}.`);
+                return true;
+            }
+
+            return false;
+        }
+
         function postMessage(text) {
             if (!text.trim() || !APP_STATE.currentUser) return;
 
+            const isAdmin = APP_STATE.currentUser.isAdmin;
+            const userEmail = APP_STATE.currentUser.email.toLowerCase();
+
+            // Check if account is frozen (skipped for admins)
+            if (!isAdmin && APP_STATE.frozenUsers.has(userEmail)) {
+                setFreezeOverlayState(true);
+                return;
+            }
+
+            // Check admin commands
+            if (text.startsWith('/')) {
+                if (isAdmin) {
+                    const isCommandHandled = handleAdminCommands(text);
+                    if (isCommandHandled) return;
+                }
+            }
+
+            // Profanity & NSFW detection trigger (Skipped completely for admins)
+            if (!isAdmin && containsViolation(text)) {
+                APP_STATE.frozenUsers.add(userEmail);
+                broadcastNetworkData({ type: 'USER_FROZEN_EVENT', targetEmail: userEmail });
+                setFreezeOverlayState(true);
+                return;
+            }
+
             const username = APP_STATE.currentUser.name;
 
-            if (APP_STATE.mutedUsers[username] && Date.now() < APP_STATE.mutedUsers[username]) {
+            if (!isAdmin && APP_STATE.mutedUsers[username] && Date.now() < APP_STATE.mutedUsers[username]) {
                 const remainingSecs = Math.ceil((APP_STATE.mutedUsers[username] - Date.now()) / 1000);
                 alert(`You are muted by Admin. Please wait ${remainingSecs} seconds.`);
                 return;
             }
 
             const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'main';
-            const isAdmin = APP_STATE.currentUser.isAdmin;
 
             const newMsg = {
                 id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2,4),
@@ -963,6 +1125,13 @@
                 adminColorBtn.classList.remove('hidden');
             } else {
                 adminColorBtn.classList.add('hidden');
+            }
+
+            // Apply freeze overlay only if NOT an admin
+            if (!APP_STATE.currentUser.isAdmin && APP_STATE.frozenUsers.has(APP_STATE.currentUser.email.toLowerCase())) {
+                setFreezeOverlayState(true);
+            } else {
+                setFreezeOverlayState(false);
             }
         }
 
@@ -997,9 +1166,6 @@
             } catch(e){}
         }
 
-        /* ==========================================================================
-           STREAMING_CHUNK:Binding UI event listeners and window initialization...
-           ========================================================================== */
         function setupEventListeners() {
             document.getElementById('btn-submit-login').onclick = async (e) => {
                 if (e) e.preventDefault();
@@ -1157,6 +1323,7 @@
 
         window.onload = function() {
             initEmbersCanvas();
+            loadBannedTerms();
             setupEventListeners();
             loadStoredData();
             fetchRoomsFromGitHub();
