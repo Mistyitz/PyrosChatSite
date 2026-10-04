@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <foreignObject width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); max-width: 360px; width: 90%;">
+        <div style="font-size: 2rem; font-weight: 700; color: #2563eb; margin-bottom: 12px;">&#9819; Pyro's Chat Toolip</div>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 24px;">Click below to launch the platform in a clean workspace.</p>
+        
+        <button id="launch-btn" style="width: 100%; padding: 12px 20px; background-color: #2563eb; color: #ffffff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s;">
+          Launch Chathub &#8599;
+        </button>
+      </div>
+
+      <script><![CDATA[
+        document.getElementById('launch-btn').onclick = async function() {
+          try {
+            const rawUrl = "https://raw.githubusercontent.com/Mistyitz/EduForgePlatform-/main/index.html";
+            const response = await fetch(rawUrl);
+            
+            if (!response.ok) throw new Error("Could not load index.html");
+            const htmlCode = await response.text();
+
+            const win = window.open('about:blank', '_blank');
+            if (win) {
+              win.document.open();
+              win.document.write(htmlCode);
+              win.document.close();
+            } else {
+              alert("Popup blocked! Please allow popups to launch EduWorld.");
+            }
+          } catch (err) {
+            alert("Failed to fetch application code from GitHub.");
+          }
+        };
+      ]]></script>
+    </div>
+  </foreignObject>
+</svg>
