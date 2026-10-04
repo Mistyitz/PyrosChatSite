@@ -105,6 +105,7 @@
     <div id="app" class="relative z-10 flex h-full w-full max-w-[1600px] mx-auto p-2 sm:p-4 md:p-6 overflow-hidden">
         <div class="glass-panel w-full h-full rounded-2xl md:rounded-3xl border border-slate-800/80 shadow-2xl overflow-hidden flex flex-col md:flex-row relative">
 
+            <!-- SIDEBAR -->
             <aside class="w-full md:w-80 bg-darkbg-800/80 border-b md:border-b-0 md:border-r border-slate-800/80 flex flex-col justify-between shrink-0 z-20 overflow-hidden">
                 <div class="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
                     <!-- Brand Feature Header -->
@@ -172,14 +173,15 @@
                 </div>
             </aside>
 
+            <!-- MAIN CHAT VIEWPORT -->
             <main class="flex-1 flex flex-col h-full bg-darkbg-900/40 relative overflow-hidden">
                 <!-- Chat Viewport Header Bar -->
                 <div class="h-14 px-4 sm:px-6 border-b border-slate-800/80 bg-darkbg-800/40 flex items-center justify-between shrink-0">
                     <div class="flex items-center space-x-2.5 overflow-hidden">
                         <span id="room-header-icon" class="text-pyro-400 font-bold text-base"><i class="fa-solid fa-hashtag"></i></span>
-                        <h2 id="room-header-title" class="font-bold text-slate-100 text-sm sm:text-base truncate">General</h2>
+                        <h2 id="room-header-title" class="font-bold text-slate-100 text-sm sm:text-base truncate">main</h2>
                         <span class="text-slate-700">|</span>
-                        <p id="room-header-subtitle" class="text-xs text-slate-400 truncate hidden sm:block">Public Room</p>
+                        <p id="room-header-subtitle" class="text-xs text-slate-400 truncate hidden sm:block">Public Main Room</p>
                     </div>
 
                     <div class="flex items-center space-x-2 shrink-0">
@@ -214,7 +216,7 @@
                                 </button>
                             </div>
 
-                            <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" class="w-full bg-transparent border-0 px-3 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-0">
+                            <input type="text" id="chat-input" placeholder="Type a message or /help..." autocomplete="off" class="w-full bg-transparent border-0 px-3 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-0">
 
                             <div class="pr-2 flex items-center space-x-1">
                                 <button type="button" id="btn-send-message" class="px-4 py-2 bg-gradient-to-r from-pyro-600 to-amber-600 hover:from-pyro-500 hover:to-amber-500 text-white rounded-lg font-medium text-xs flex items-center gap-1.5 pyro-button-glow transition">
@@ -234,6 +236,7 @@
         </div>
     </div>
 
+    <!-- CODE SNIPPET MODAL -->
     <div id="code-snippet-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-lg p-5 rounded-2xl border border-slate-700 shadow-2xl">
             <h3 class="text-sm font-bold text-slate-100 mb-3 flex items-center gap-2">
@@ -247,6 +250,7 @@
         </div>
     </div>
 
+    <!-- PRIVATE ROOM PASSWORD MODAL -->
     <div id="modal-room-pass" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-slate-700 shadow-2xl space-y-4">
             <div class="text-center">
@@ -267,6 +271,7 @@
         </div>
     </div>
 
+    <!-- LOGIN MODAL -->
     <div id="modal-login" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-md p-6 sm:p-8 rounded-3xl border border-slate-700/80 shadow-2xl relative">
             <div class="text-center mb-6">
@@ -310,6 +315,9 @@
     <script>
         const EMOJI_LIST = ['🔥','⚡','😎','👍','🚀','🎮','💻','🎉','❤️','😂','🤖','💥'];
 
+        // Core App State (MAIN room set as default priority)
+        const MAIN_ROOM = { id: 'main', name: 'main', isPrivate: false, password: '' };
+
         const APP_STATE = {
             currentUser: null,
             peerInstance: null,
@@ -318,11 +326,11 @@
             soundEnabled: true,
             autoScroll: true,
             adminRedText: true,
-            mutedUsers: {}, // { username: expiryTimestamp }
+            mutedUsers: {},
             isolatedUsers: new Set(),
             messages: [],
-            rooms: [],
-            currentRoom: { id: 'general', name: 'general', isPrivate: false, password: '' },
+            rooms: [MAIN_ROOM],
+            currentRoom: MAIN_ROOM,
             pendingRoom: null,
             lastAdminPingTime: 0
         };
@@ -439,7 +447,7 @@
         }
 
         /* ==========================================================================
-           CRASH-PROOF AUTHENTICATION ENGINE
+           AUTHENTICATION ENGINE
            ========================================================================== */
         function extractPasswordFromRawText(rawText) {
             if (!rawText) return null;
@@ -525,7 +533,6 @@
                 }
             }
 
-            // Fallback for offline testing or missing remote file
             if (!fetchSuccess) {
                 isValid = true;
             }
@@ -573,7 +580,7 @@
         }
 
         /* ==========================================================================
-           GITHUB ROOMS SCANNER
+           STREAMING_CHUNK:Scanning rooms and ensuring main room priority...
            ========================================================================== */
         async function fetchRoomsFromGitHub() {
             const listContainer = document.getElementById('rooms-list');
@@ -619,15 +626,25 @@
                 }
             } catch (err) {}
 
-            if (roomsData.length === 0) {
-                roomsData = [
-                    { id: 'general', name: 'general', isPrivate: false, password: '' },
+            // Ensure "main" room is ALWAYS first in the directory
+            const mainExists = roomsData.find(r => r.id === 'main');
+            if (!mainExists) {
+                roomsData.unshift(MAIN_ROOM);
+            } else {
+                roomsData = [mainExists, ...roomsData.filter(r => r.id !== 'main')];
+            }
+
+            if (roomsData.length === 1) {
+                roomsData.push(
                     { id: 'dev-talk', name: 'dev-talk', isPrivate: false, password: '' },
                     { id: 'gaming', name: 'gaming', isPrivate: false, password: '' }
-                ];
+                );
             }
 
             APP_STATE.rooms = roomsData;
+            
+            // Auto-select MAIN room as the default room on startup
+            switchActiveRoom(roomsData[0]);
             renderRoomsUI();
         }
 
@@ -635,7 +652,6 @@
             const listContainer = document.getElementById('rooms-list');
             listContainer.innerHTML = '';
 
-            // If user is isolated, restrict room choices
             if (APP_STATE.currentUser && APP_STATE.isolatedUsers.has(APP_STATE.currentUser.name)) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
@@ -713,7 +729,6 @@
         function initP2P() {
             if (!APP_STATE.currentUser) return;
 
-            // Init BroadcastChannel for multi-tab local broadcast
             if (!APP_STATE.broadcastChannel) {
                 try {
                     APP_STATE.broadcastChannel = new BroadcastChannel('pyros_chat_channel');
@@ -723,7 +738,6 @@
                 } catch(e){}
             }
 
-            // Init PeerJS WebRTC
             if (window.Peer && !APP_STATE.peerInstance) {
                 try {
                     const peerId = `pyros_${APP_STATE.currentUser.id}_${Math.random().toString(36).substr(2,4)}`;
@@ -743,11 +757,9 @@
         }
 
         function broadcastNetworkData(data) {
-            // Send via BroadcastChannel
             if (APP_STATE.broadcastChannel) {
                 try { APP_STATE.broadcastChannel.postMessage(data); } catch(e){}
             }
-            // Send via PeerJS connections
             Object.values(APP_STATE.peerConnections).forEach(conn => {
                 if (conn && conn.open) {
                     try { conn.send(data); } catch(e){}
@@ -788,26 +800,22 @@
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
 
-            // Multi-line Code blocks
             escaped = escaped.replace(/```([\s\S]*?)```/g, '<div class="code-block my-2 p-3 rounded-lg text-xs font-mono text-amber-300 overflow-x-auto">$1</div>');
-            // Inline code
             escaped = escaped.replace(/`([^`]+)`/g, '<code class="bg-darkbg-950 px-1.5 py-0.5 rounded text-amber-400 font-mono text-[11px] border border-slate-800">$1</code>');
-            // Bold
             escaped = escaped.replace(/\*([^*]+)\*/g, '<strong class="font-bold text-slate-100">$1</strong>');
-            // Italics
             escaped = escaped.replace(/_([^_]+)_/g, '<em class="italic">$1</em>');
 
             return escaped;
         }
 
         /* ==========================================================================
-           MESSAGING ENGINE & RENDER
+           STREAMING_CHUNK:Rendering message feed and user actions...
            ========================================================================== */
         function renderMessages() {
             const container = document.getElementById('messages-container');
             container.innerHTML = '';
 
-            const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'general';
+            const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'main';
             const roomMessages = APP_STATE.messages.filter(m => !m.roomId || m.roomId === currentRoomId);
 
             if (roomMessages.length === 0) {
@@ -833,7 +841,6 @@
                 const isRedMessage = msg.isRedText;
                 const textStyleClass = isRedMessage ? 'text-red-400 font-semibold' : 'text-slate-200';
 
-                // Admin Waffle Menu HTML
                 const waffleMenuHtml = currentIsAdmin ? `
                     <div class="relative group/waffle ml-auto shrink-0">
                         <button type="button" class="p-1 text-slate-500 hover:text-amber-400 transition" title="Admin Moderation Menu">
@@ -881,7 +888,7 @@
             APP_STATE.mutedUsers[targetUser] = Date.now() + (5 * 60 * 1000);
             broadcastNetworkData({ type: 'ADMIN_MUTE_COMMAND', targetUser: targetUser });
 
-            const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'general';
+            const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'main';
             const sysMsg = {
                 id: 'sys_' + Date.now(),
                 roomId: currentRoomId,
@@ -916,14 +923,13 @@
 
             const username = APP_STATE.currentUser.name;
 
-            // Check if muted
             if (APP_STATE.mutedUsers[username] && Date.now() < APP_STATE.mutedUsers[username]) {
                 const remainingSecs = Math.ceil((APP_STATE.mutedUsers[username] - Date.now()) / 1000);
                 alert(`You are muted by Admin. Please wait ${remainingSecs} seconds.`);
                 return;
             }
 
-            const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'general';
+            const currentRoomId = APP_STATE.currentRoom ? APP_STATE.currentRoom.id : 'main';
             const isAdmin = APP_STATE.currentUser.isAdmin;
 
             const newMsg = {
@@ -992,10 +998,9 @@
         }
 
         /* ==========================================================================
-           STREAMING_CHUNK:Binding UI controls and lifecycle events...
+           STREAMING_CHUNK:Binding UI event listeners and window initialization...
            ========================================================================== */
         function setupEventListeners() {
-            // LOGIN BUTTON
             document.getElementById('btn-submit-login').onclick = async (e) => {
                 if (e) e.preventDefault();
                 const userInput = document.getElementById('login-username').value;
@@ -1020,7 +1025,6 @@
                 }
             };
 
-            // ADMIN TEXT COLOR TOGGLE
             document.getElementById('btn-admin-color').onclick = () => {
                 APP_STATE.adminRedText = !APP_STATE.adminRedText;
                 const btn = document.getElementById('btn-admin-color');
@@ -1031,10 +1035,8 @@
                 }
             };
 
-            // ROOM REFRESH BUTTON
             document.getElementById('btn-refresh-rooms').onclick = fetchRoomsFromGitHub;
 
-            // PRIVATE ROOM PASSWORD SUBMIT
             document.getElementById('btn-submit-room-pass').onclick = () => {
                 const passwordVal = document.getElementById('room-password-input').value.trim();
                 const targetRoom = APP_STATE.pendingRoom;
@@ -1055,7 +1057,6 @@
                 APP_STATE.pendingRoom = null;
             };
 
-            // LOGOUT BUTTON
             document.getElementById('btn-logout').onclick = () => {
                 if (APP_STATE.peerInstance) {
                     try { APP_STATE.peerInstance.destroy(); } catch(e){}
@@ -1066,7 +1067,6 @@
                 document.getElementById('login-status-alert').classList.add('hidden');
             };
 
-            // CHAT SEND BUTTON & ENTER KEY
             const sendMsgBtn = document.getElementById('btn-send-message');
             const chatInput = document.getElementById('chat-input');
 
@@ -1083,7 +1083,6 @@
                 }
             };
 
-            // EMOJI PICKER TOGGLE
             const emojiPicker = document.getElementById('emoji-picker');
             document.getElementById('btn-toggle-emoji').onclick = () => emojiPicker.classList.toggle('hidden');
             
@@ -1101,7 +1100,6 @@
                 emojiGrid.appendChild(btn);
             });
 
-            // CODE SNIPPET MODAL
             document.getElementById('btn-trigger-code').onclick = () => document.getElementById('code-snippet-modal').classList.remove('hidden');
             document.getElementById('btn-cancel-code').onclick = () => document.getElementById('code-snippet-modal').classList.add('hidden');
             document.getElementById('btn-insert-code').onclick = () => {
@@ -1111,21 +1109,20 @@
                 document.getElementById('code-input').value = '';
             };
 
-            // PING ADMINS WITH 3-MINUTE COOLDOWN TIMER
             const pingAdminBtn = document.getElementById('btn-ping-admin');
             const pingAdminText = document.getElementById('ping-admin-text');
             let pingInterval = null;
 
             pingAdminBtn.onclick = () => {
                 const now = Date.now();
-                const cooldownMs = 3 * 60 * 1000; // 3 minutes
+                const cooldownMs = 3 * 60 * 1000;
                 const timePassed = now - APP_STATE.lastAdminPingTime;
 
                 if (timePassed < cooldownMs) return;
 
                 APP_STATE.lastAdminPingTime = now;
                 const senderName = APP_STATE.currentUser ? APP_STATE.currentUser.name : 'Guest';
-                const currentRoomName = APP_STATE.currentRoom ? APP_STATE.currentRoom.name : 'general';
+                const currentRoomName = APP_STATE.currentRoom ? APP_STATE.currentRoom.name : 'main';
 
                 postMessage(`🚨 **[ADMIN PING]** @bcarter9 Attention needed! Pinged by **${senderName}** in #${currentRoomName}!`);
 
@@ -1152,7 +1149,6 @@
                 pingInterval = setInterval(updateTimer, 1000);
             };
 
-            // AUDIO TOGGLE
             document.getElementById('btn-toggle-sound').onclick = () => {
                 APP_STATE.soundEnabled = !APP_STATE.soundEnabled;
                 document.getElementById('sound-icon').className = APP_STATE.soundEnabled ? "fa-solid fa-volume-high text-xs text-pyro-400" : "fa-solid fa-volume-xmark text-xs text-slate-500";
